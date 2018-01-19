@@ -2056,6 +2056,28 @@ class StyleGuide(object):
             if 'paths' in options_dict:
                 self.paths = options_dict['paths']
 
+        # After options.__dict__.update we need to ensure the *args and **kwargs where correctly passed
+        assert isinstance(options.verbose, int)
+        assert isinstance(options.quiet, int)
+        assert isinstance(options.repeat, bool)
+        assert isinstance(options.exclude, list)
+        assert isinstance(options.filename, list)
+        assert isinstance(options.select, list)
+        assert isinstance(options.ignore, list)
+        assert isinstance(options.max_line_length, int)
+        assert isinstance(options.format, str)
+        assert isinstance(options.testsuite, bool)
+        assert isinstance(options.doctest, bool)
+        assert isinstance(options.config, bool)
+        assert isinstance(options.reporter, bool)
+        assert isinstance(options.show_source, bool)
+        assert isinstance(options.show_pep8, bool)
+        assert isinstance(options.statistics, bool)
+        assert isinstance(options.count, bool)
+        assert isinstance(options.hang_closing, bool)
+        assert isinstance(options.diff, bool)
+        assert isinstance(options.benchmark, bool)
+
         self.runner = self.input_file
         self.options = options
 
@@ -2195,19 +2217,19 @@ def get_parser(prog='pycodestyle', version=__version__):
                       help="when parsing directories, only check filenames "
                            "matching these comma separated patterns "
                            "(default: %default)")
-    parser.add_option('--select', metavar='errors', default='',
-                      help="select errors and warnings (e.g. E,W6)")
-    parser.add_option('--ignore', metavar='errors', default='',
-                      help="skip errors and warnings (e.g. E4,W) "
+    parser.add_option('--select', metavar='errors', default=[],
+                      help="select errors and warnings (e.g. W291,E,W6)")
+    parser.add_option('--ignore', metavar='errors', default=[],
+                      help="skip errors and warnings (e.g. E4,W,E501) "
                            "(default: %s)" % DEFAULT_IGNORE)
-    parser.add_option('--show-source', action='store_true',
+    parser.add_option('--show-source', action='store_true', default=False,
                       help="show source code for each error")
-    parser.add_option('--show-pep8', action='store_true',
+    parser.add_option('--show-pep8', action='store_true', default=False,
                       help="show text of PEP 8 for each error "
                            "(implies --first)")
-    parser.add_option('--statistics', action='store_true',
+    parser.add_option('--statistics', action='store_true', default=False,
                       help="count errors and warnings")
-    parser.add_option('--count', action='store_true',
+    parser.add_option('--count', action='store_true', default=False,
                       help="print total number of errors and warnings "
                            "to standard error and set exit code to 1 if "
                            "total is not null")
@@ -2215,12 +2237,12 @@ def get_parser(prog='pycodestyle', version=__version__):
                       default=MAX_LINE_LENGTH,
                       help="set maximum allowed line length "
                            "(default: %default)")
-    parser.add_option('--hang-closing', action='store_true',
+    parser.add_option('--hang-closing', action='store_true', default=False,
                       help="hang closing bracket instead of matching "
                            "indentation of opening bracket's line")
     parser.add_option('--format', metavar='format', default='default',
                       help="set the error format [default|pylint|<custom>]")
-    parser.add_option('--diff', action='store_true',
+    parser.add_option('--diff', action='store_true', default=False,
                       help="report changes only within line number ranges in "
                            "the unified diff received on STDIN")
     group = parser.add_option_group("Testing Options")
@@ -2229,7 +2251,7 @@ def get_parser(prog='pycodestyle', version=__version__):
                          help="run regression tests from dir")
         group.add_option('--doctest', action='store_true',
                          help="run doctest on myself")
-    group.add_option('--benchmark', action='store_true',
+    group.add_option('--benchmark', action='store_true', default=False,
                      help="measure processing speed")
     return parser
 
