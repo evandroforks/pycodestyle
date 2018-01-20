@@ -2055,6 +2055,7 @@ class StyleGuide(object):
             options.__dict__.update(options_dict)
             if 'paths' in options_dict:
                 self.paths = options_dict['paths']
+        _ensure_valid_arguments(options)
 
         self.runner = self.input_file
         self.options = options
@@ -2196,18 +2197,18 @@ def get_parser(prog='pycodestyle', version=__version__):
                            "matching these comma separated patterns "
                            "(default: %default)")
     parser.add_option('--select', metavar='errors', default='',
-                      help="select errors and warnings (e.g. E,W6)")
+                      help="select errors and warnings (e.g. W291,E,W6)")
     parser.add_option('--ignore', metavar='errors', default='',
-                      help="skip errors and warnings (e.g. E4,W) "
+                      help="skip errors and warnings (e.g. E4,W,E501) "
                            "(default: %s)" % DEFAULT_IGNORE)
-    parser.add_option('--show-source', action='store_true',
+    parser.add_option('--show-source', action='store_true', default=False,
                       help="show source code for each error")
-    parser.add_option('--show-pep8', action='store_true',
+    parser.add_option('--show-pep8', action='store_true', default=False,
                       help="show text of PEP 8 for each error "
                            "(implies --first)")
-    parser.add_option('--statistics', action='store_true',
+    parser.add_option('--statistics', action='store_true', default=False,
                       help="count errors and warnings")
-    parser.add_option('--count', action='store_true',
+    parser.add_option('--count', action='store_true', default=False,
                       help="print total number of errors and warnings "
                            "to standard error and set exit code to 1 if "
                            "total is not null")
@@ -2215,21 +2216,21 @@ def get_parser(prog='pycodestyle', version=__version__):
                       default=MAX_LINE_LENGTH,
                       help="set maximum allowed line length "
                            "(default: %default)")
-    parser.add_option('--hang-closing', action='store_true',
+    parser.add_option('--hang-closing', action='store_true', default=False,
                       help="hang closing bracket instead of matching "
                            "indentation of opening bracket's line")
     parser.add_option('--format', metavar='format', default='default',
                       help="set the error format [default|pylint|<custom>]")
-    parser.add_option('--diff', action='store_true',
+    parser.add_option('--diff', action='store_true', default=False,
                       help="report changes only within line number ranges in "
                            "the unified diff received on STDIN")
     group = parser.add_option_group("Testing Options")
     if os.path.exists(TESTSUITE_PATH):
-        group.add_option('--testsuite', metavar='dir',
+        group.add_option('--testsuite', metavar='dir', default="",
                          help="run regression tests from dir")
-        group.add_option('--doctest', action='store_true',
+        group.add_option('--doctest', action='store_true', default=False,
                          help="run doctest on myself")
-    group.add_option('--benchmark', action='store_true',
+    group.add_option('--benchmark', action='store_true', default=False,
                      help="measure processing speed")
     return parser
 
@@ -2305,7 +2306,8 @@ def read_config(options, args, arglist, parser):
 
         # Third, overwrite with the command-line options
         (options, __) = parser.parse_args(arglist, values=new_options)
-    options.doctest = options.testsuite = False
+    options.doctest = False
+    options.testsuite = ""
     return options
 
 
@@ -2338,7 +2340,7 @@ def process_options(arglist=None, parse_argv=False, config_file=None,
     if verbose is not None:
         options.verbose = verbose
 
-    if options.ensure_value('testsuite', False):
+    if options.ensure_value('testsuite', ""):
         args.append(options.testsuite)
     elif not options.ensure_value('doctest', False):
         if parse_argv and not args:
@@ -2350,10 +2352,7 @@ def process_options(arglist=None, parse_argv=False, config_file=None,
         options = read_config(options, args, arglist, parser)
         options.reporter = parse_argv and options.quiet == 1 and FileReport
 
-    options.filename = _parse_multi_options(options.filename)
-    options.exclude = normalize_paths(options.exclude)
-    options.select = _parse_multi_options(options.select)
-    options.ignore = _parse_multi_options(options.ignore)
+    _parse_list_multi_options(options)
 
     if options.diff:
         options.reporter = DiffReport
@@ -2364,7 +2363,14 @@ def process_options(arglist=None, parse_argv=False, config_file=None,
     return options, args
 
 
-def _parse_multi_options(options, split_token=','):
+def _parse_list_multi_options(options):
+    options.filename = _parse_multi_options(options.filename)
+    options.exclude = normalize_paths(options.exclude)
+    options.select = _parse_multi_options(options.select)
+    options.ignore = _parse_multi_options(options.ignore)
+
+
+def _parse_multi_options(option, split_token=','):
     r"""Split and strip and discard empties.
 
     Turns the following:
@@ -2374,10 +2380,44 @@ def _parse_multi_options(options, split_token=','):
 
     into ["A", "B"]
     """
-    if options:
-        return [o.strip() for o in options.split(split_token) if o.strip()]
-    else:
-        return options
+    if isinstance(option, (list, tuple)):
+        return option
+
+    if option:
+        return [o.strip() for o in option.split(split_token) if o.strip()]
+    return []
+
+
+def _ensure_valid_arguments(options):
+    _parse_list_multi_options(options)
+
+    options_dict = options.__dict__
+    default_types = (("verbose", int),
+                     ("quiet", int),
+                     ("repeat", bool),
+                     ("exclude", (list, tuple)),
+                     ("filename", (list, tuple)),
+                     ("select", (list, tuple)),
+                     ("ignore", (list, tuple)),
+                     ("max_line_length", int),
+                     ("format", str),
+                     ("testsuite", str),
+                     ("doctest", bool),
+                     ("reporter", object),
+                     ("config", bool),
+                     ("show_source", bool),
+                     ("show_pep8", bool),
+                     ("statistics", bool),
+                     ("count", bool),
+                     ("hang_closing", bool),
+                     ("diff", bool),
+                     ("benchmark", bool),)
+    for option, default_type in default_types:
+        if not isinstance(options_dict[option], default_type):
+            raise ValueError("The option `%s=%s` must be of the type `%s` "
+                             "instead of `%s`." %
+                             (option, options_dict[option],
+                              default_type, type(option)))
 
 
 def _main():
