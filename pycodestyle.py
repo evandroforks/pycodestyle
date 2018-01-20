@@ -2040,6 +2040,8 @@ class StyleGuide(object):
     """Initialize a PEP-8 instance with few options."""
 
     def __init__(self, *args, **kwargs):
+        debug("\n\nStyleGuide: args: " + str(args))
+        debug("StyleGuide: kwargs: " + str(kwargs))
         # build options from the command line
         self.checker_class = kwargs.pop('checker_class', Checker)
         parse_argv = kwargs.pop('parse_argv', False)
@@ -2064,6 +2066,8 @@ class StyleGuide(object):
             options.reporter = BaseReport if options.quiet else StandardReport
 
         options.select = tuple(options.select or ())
+        debug("StyleGuide: options.ignore 1: " +
+              str(options.ignore))
         if not (options.select or options.ignore or
                 options.testsuite or options.doctest) and DEFAULT_IGNORE:
             # The default choice: ignore controversial checks
@@ -2071,6 +2075,9 @@ class StyleGuide(object):
         else:
             # Ignore all checks which are not explicitly selected
             options.ignore = ('',) if options.select else tuple(options.ignore)
+        debug("StyleGuide: options.ignore 2: " +
+              str(options.ignore))
+        # raise Exception()
         options.benchmark_keys = BENCHMARK_KEYS[:]
         options.ignore_code = self.ignore_code
         options.physical_checks = self.get_checks('physical_line')
@@ -2369,6 +2376,11 @@ def _parse_list_multi_options(options):
     options.select = _parse_multi_options(options.select)
     options.ignore = _parse_multi_options(options.ignore)
 
+    debug("StyleGuide: process_options, select: " +
+          str(options.select))
+    debug("StyleGuide: process_options, ignore: " +
+          str(options.ignore))
+
 
 def _parse_multi_options(option, split_token=','):
     r"""Split and strip and discard empties.
@@ -2390,6 +2402,7 @@ def _parse_multi_options(option, split_token=','):
 
 def _ensure_valid_arguments(options):
     _parse_list_multi_options(options)
+    debug("_ensure_valid_arguments, options: " + str(options))
 
     options_dict = options.__dict__
     default_types = (("verbose", int),
@@ -2452,6 +2465,12 @@ def _main():
         if options.count:
             sys.stderr.write(str(report.total_errors) + '\n')
         sys.exit(1)
+
+
+def debug(text):
+    sys.stderr.write(text + "\n")
+    # print(text)
+    pass
 
 
 if __name__ == '__main__':
