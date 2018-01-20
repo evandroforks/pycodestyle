@@ -153,7 +153,8 @@ class APITestCase(unittest.TestCase):
                   'doctest', 'quiet', 'show_pep8', 'show_source',
                   'statistics', 'testsuite', 'verbose'):
             oval = getattr(pep8style.options, o)
-            self.assertTrue(oval in (None, False), msg='%s = %r' % (o, oval))
+            self.assertTrue(oval in (None, False, ""),
+                            msg='%s = %r' % (o, oval))
 
         # Check default options
         self.assertTrue(pep8style.options.repeat)

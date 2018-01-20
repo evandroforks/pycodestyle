@@ -2056,27 +2056,29 @@ class StyleGuide(object):
             if 'paths' in options_dict:
                 self.paths = options_dict['paths']
 
-        # After options.__dict__.update we need to ensure the *args and **kwargs where correctly passed
-        assert isinstance(options.verbose, int)
-        assert isinstance(options.quiet, int)
-        assert isinstance(options.repeat, bool)
-        assert isinstance(options.exclude, list)
-        assert isinstance(options.filename, list)
-        assert isinstance(options.select, list)
-        assert isinstance(options.ignore, list)
-        assert isinstance(options.max_line_length, int)
-        assert isinstance(options.format, str)
-        assert isinstance(options.testsuite, bool)
-        assert isinstance(options.doctest, bool)
-        assert isinstance(options.config, bool)
-        assert isinstance(options.reporter, bool)
-        assert isinstance(options.show_source, bool)
-        assert isinstance(options.show_pep8, bool)
-        assert isinstance(options.statistics, bool)
-        assert isinstance(options.count, bool)
-        assert isinstance(options.hang_closing, bool)
-        assert isinstance(options.diff, bool)
-        assert isinstance(options.benchmark, bool)
+        _parse_list_multi_options(options)
+
+        # Ensure the arguments are correctly parsed
+        assert customisinstance(options, "verbose", int)
+        assert customisinstance(options, "quiet", int)
+        assert customisinstance(options, "repeat", bool)
+        assert customisinstance(options, "exclude", (list, tuple))
+        assert customisinstance(options, "filename", (list, tuple))
+        assert customisinstance(options, "select", (list, tuple))
+        assert customisinstance(options, "ignore", (list, tuple))
+        assert customisinstance(options, "max_line_length", int)
+        assert customisinstance(options, "format", str)
+        assert customisinstance(options, "testsuite", str)
+        assert customisinstance(options, "doctest", bool)
+        assert customisinstance(options, "reporter", object)
+        assert customisinstance(options, "config", bool)
+        assert customisinstance(options, "show_source", bool)
+        assert customisinstance(options, "show_pep8", bool)
+        assert customisinstance(options, "statistics", bool)
+        assert customisinstance(options, "count", bool)
+        assert customisinstance(options, "hang_closing", bool)
+        assert customisinstance(options, "diff", bool)
+        assert customisinstance(options, "benchmark", bool)
 
         self.runner = self.input_file
         self.options = options
@@ -2217,9 +2219,9 @@ def get_parser(prog='pycodestyle', version=__version__):
                       help="when parsing directories, only check filenames "
                            "matching these comma separated patterns "
                            "(default: %default)")
-    parser.add_option('--select', metavar='errors', default=[],
+    parser.add_option('--select', metavar='errors', default='',
                       help="select errors and warnings (e.g. W291,E,W6)")
-    parser.add_option('--ignore', metavar='errors', default=[],
+    parser.add_option('--ignore', metavar='errors', default='',
                       help="skip errors and warnings (e.g. E4,W,E501) "
                            "(default: %s)" % DEFAULT_IGNORE)
     parser.add_option('--show-source', action='store_true', default=False,
@@ -2247,9 +2249,9 @@ def get_parser(prog='pycodestyle', version=__version__):
                            "the unified diff received on STDIN")
     group = parser.add_option_group("Testing Options")
     if os.path.exists(TESTSUITE_PATH):
-        group.add_option('--testsuite', metavar='dir',
+        group.add_option('--testsuite', metavar='dir', default="",
                          help="run regression tests from dir")
-        group.add_option('--doctest', action='store_true',
+        group.add_option('--doctest', action='store_true', default=False,
                          help="run doctest on myself")
     group.add_option('--benchmark', action='store_true', default=False,
                      help="measure processing speed")
@@ -2327,7 +2329,8 @@ def read_config(options, args, arglist, parser):
 
         # Third, overwrite with the command-line options
         (options, __) = parser.parse_args(arglist, values=new_options)
-    options.doctest = options.testsuite = False
+    options.doctest = False
+    options.testsuite = ""
     return options
 
 
@@ -2360,7 +2363,7 @@ def process_options(arglist=None, parse_argv=False, config_file=None,
     if verbose is not None:
         options.verbose = verbose
 
-    if options.ensure_value('testsuite', False):
+    if options.ensure_value('testsuite', ""):
         args.append(options.testsuite)
     elif not options.ensure_value('doctest', False):
         if parse_argv and not args:
@@ -2372,10 +2375,7 @@ def process_options(arglist=None, parse_argv=False, config_file=None,
         options = read_config(options, args, arglist, parser)
         options.reporter = parse_argv and options.quiet == 1 and FileReport
 
-    options.filename = _parse_multi_options(options.filename)
-    options.exclude = normalize_paths(options.exclude)
-    options.select = _parse_multi_options(options.select)
-    options.ignore = _parse_multi_options(options.ignore)
+    _parse_list_multi_options(options)
 
     if options.diff:
         options.reporter = DiffReport
@@ -2386,7 +2386,14 @@ def process_options(arglist=None, parse_argv=False, config_file=None,
     return options, args
 
 
-def _parse_multi_options(options, split_token=','):
+def _parse_list_multi_options(options):
+    options.filename = _parse_multi_options(options.filename)
+    options.exclude = normalize_paths(options.exclude)
+    options.select = _parse_multi_options(options.select)
+    options.ignore = _parse_multi_options(options.ignore)
+
+
+def _parse_multi_options(option, split_token=','):
     r"""Split and strip and discard empties.
 
     Turns the following:
@@ -2396,10 +2403,12 @@ def _parse_multi_options(options, split_token=','):
 
     into ["A", "B"]
     """
-    if options:
-        return [o.strip() for o in options.split(split_token) if o.strip()]
-    else:
-        return options
+    if isinstance(option, (list, tuple)):
+        return option
+
+    if option:
+        return [o.strip() for o in option.split(split_token) if o.strip()]
+    return []
 
 
 def _main():
@@ -2434,6 +2443,15 @@ def _main():
         if options.count:
             sys.stderr.write(str(report.total_errors) + '\n')
         sys.exit(1)
+
+
+def customisinstance(values_object, option_name, target_type):
+    """ Used to check optional options like verbose which is not present
+    when running with `python -O`"""
+    values_dict = values_object.__dict__
+    if option_name in values_dict:
+        return isinstance(values_dict[option_name], target_type)
+    return True
 
 
 if __name__ == '__main__':
