@@ -2055,30 +2055,7 @@ class StyleGuide(object):
             options.__dict__.update(options_dict)
             if 'paths' in options_dict:
                 self.paths = options_dict['paths']
-
-        _parse_list_multi_options(options)
-
-        # Ensure the arguments are correctly parsed
-        assert customisinstance(options, "verbose", int)
-        assert customisinstance(options, "quiet", int)
-        assert customisinstance(options, "repeat", bool)
-        assert customisinstance(options, "exclude", (list, tuple))
-        assert customisinstance(options, "filename", (list, tuple))
-        assert customisinstance(options, "select", (list, tuple))
-        assert customisinstance(options, "ignore", (list, tuple))
-        assert customisinstance(options, "max_line_length", int)
-        assert customisinstance(options, "format", str)
-        assert customisinstance(options, "testsuite", str)
-        assert customisinstance(options, "doctest", bool)
-        assert customisinstance(options, "reporter", object)
-        assert customisinstance(options, "config", bool)
-        assert customisinstance(options, "show_source", bool)
-        assert customisinstance(options, "show_pep8", bool)
-        assert customisinstance(options, "statistics", bool)
-        assert customisinstance(options, "count", bool)
-        assert customisinstance(options, "hang_closing", bool)
-        assert customisinstance(options, "diff", bool)
-        assert customisinstance(options, "benchmark", bool)
+        _ensure_valid_arguments(options)
 
         self.runner = self.input_file
         self.options = options
@@ -2411,6 +2388,38 @@ def _parse_multi_options(option, split_token=','):
     return []
 
 
+def _ensure_valid_arguments(options):
+    _parse_list_multi_options(options)
+
+    options_dict = options.__dict__
+    default_types = (("verbose", int),
+                     ("quiet", int),
+                     ("repeat", bool),
+                     ("exclude", (list, tuple)),
+                     ("filename", (list, tuple)),
+                     ("select", (list, tuple)),
+                     ("ignore", (list, tuple)),
+                     ("max_line_length", int),
+                     ("format", str),
+                     ("testsuite", str),
+                     ("doctest", bool),
+                     ("reporter", object),
+                     ("config", bool),
+                     ("show_source", bool),
+                     ("show_pep8", bool),
+                     ("statistics", bool),
+                     ("count", bool),
+                     ("hang_closing", bool),
+                     ("diff", bool),
+                     ("benchmark", bool),)
+    for option, default_type in default_types:
+        if not isinstance(options_dict[option], default_type):
+            raise ValueError("The option `%s=%s` must be of the type `%s` "
+                             "instead of `%s`." %
+                             (option, options_dict[option],
+                              default_type, type(option)))
+
+
 def _main():
     """Parse options and run checks on Python source."""
     import signal
@@ -2443,15 +2452,6 @@ def _main():
         if options.count:
             sys.stderr.write(str(report.total_errors) + '\n')
         sys.exit(1)
-
-
-def customisinstance(values_object, option_name, target_type):
-    """ Used to check optional options like verbose which is not present
-    when running with `python -O`"""
-    values_dict = values_object.__dict__
-    if option_name in values_dict:
-        return isinstance(values_dict[option_name], target_type)
-    return True
 
 
 if __name__ == '__main__':
