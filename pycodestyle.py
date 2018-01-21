@@ -1968,7 +1968,6 @@ class BaseReport(object):
 
     def error(self, line_number, offset, text, check):
         """Report an error, according to options."""
-        print( "text: " + text )
         code = text[:4]
         if self._ignore_code(code):
             return
@@ -2118,6 +2117,7 @@ class StyleGuide(object):
                 self.paths = options_dict['paths']
 
         _parse_list_multi_options(options)
+        loger(2, "_ensure_valid_arguments, options: " + str(options))
         assert isinstance(options.verbose, int)
         assert isinstance(options.quiet, int)
         assert isinstance(options.repeat, bool)
