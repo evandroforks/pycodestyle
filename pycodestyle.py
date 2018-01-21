@@ -2116,7 +2116,28 @@ class StyleGuide(object):
             options.__dict__.update(options_dict)
             if 'paths' in options_dict:
                 self.paths = options_dict['paths']
-        _ensure_valid_arguments(options)
+
+        _parse_list_multi_options(options)
+        assert isinstance(options.verbose, int)
+        assert isinstance(options.quiet, int)
+        assert isinstance(options.repeat, bool)
+        assert isinstance(options.exclude, (list, tuple))
+        assert isinstance(options.filename, (list, tuple))
+        assert isinstance(options.select, (list, tuple))
+        assert isinstance(options.ignore, (list, tuple))
+        assert isinstance(options.max_line_length, int)
+        assert isinstance(options.format, str)
+        assert isinstance(options.testsuite, str)
+        assert isinstance(options.doctest, bool)
+        assert isinstance(options.reporter, object)
+        assert isinstance(options.config, bool)
+        assert isinstance(options.show_source, bool)
+        assert isinstance(options.show_pep8, bool)
+        assert isinstance(options.statistics, bool)
+        assert isinstance(options.count, bool)
+        assert isinstance(options.hang_closing, bool)
+        assert isinstance(options.diff, bool)
+        assert isinstance(options.benchmark, bool)
 
         self.runner = self.input_file
         self.options = options
@@ -2457,39 +2478,6 @@ def _parse_multi_options(option, split_token=','):
     if option:
         return [o.strip() for o in option.split(split_token) if o.strip()]
     return []
-
-
-def _ensure_valid_arguments(options):
-    _parse_list_multi_options(options)
-    loger(2, "_ensure_valid_arguments, options: " + str(options))
-
-    options_dict = options.__dict__
-    default_types = (("verbose", int),
-                     ("quiet", int),
-                     ("repeat", bool),
-                     ("exclude", (list, tuple)),
-                     ("filename", (list, tuple)),
-                     ("select", (list, tuple)),
-                     ("ignore", (list, tuple)),
-                     ("max_line_length", int),
-                     ("format", str),
-                     ("testsuite", str),
-                     ("doctest", bool),
-                     ("reporter", object),
-                     ("config", bool),
-                     ("show_source", bool),
-                     ("show_pep8", bool),
-                     ("statistics", bool),
-                     ("count", bool),
-                     ("hang_closing", bool),
-                     ("diff", bool),
-                     ("benchmark", bool),)
-    for option, default_type in default_types:
-        if not isinstance(options_dict[option], default_type):
-            raise ValueError("The option `%s=%s` must be of the type `%s` "
-                             "instead of `%s`." %
-                             (option, options_dict[option],
-                              default_type, type(option)))
 
 
 def _main():
