@@ -47,6 +47,7 @@ W warnings
 900 syntax error
 """
 from __future__ import with_statement
+from python_debug_tools import getLogger
 
 import inspect
 import keyword
@@ -78,6 +79,10 @@ except ImportError:
     from ConfigParser import RawConfigParser
 
 __version__ = '2.3.1'
+
+loger = getLogger(0)
+# loger.setup_logger("debug.txt", function=False, tick=False)
+
 
 DEFAULT_EXCLUDE = '.svn,CVS,.bzr,.hg,.git,__pycache__,.tox'
 DEFAULT_IGNORE = 'E121,E123,E126,E226,E24,E704,W503,W504'
@@ -1963,6 +1968,7 @@ class BaseReport(object):
 
     def error(self, line_number, offset, text, check):
         """Report an error, according to options."""
+        print( "text: " + text )
         code = text[:4]
         if self._ignore_code(code):
             return
@@ -2093,8 +2099,8 @@ class StyleGuide(object):
     """Initialize a PEP-8 instance with few options."""
 
     def __init__(self, *args, **kwargs):
-        debug("\n\nStyleGuide: args: " + str(args))
-        debug("StyleGuide: kwargs: " + str(kwargs))
+        loger(2, "\n\nStyleGuide: args: " + str(args))
+        loger(2, "StyleGuide: kwargs: " + str(kwargs))
         # build options from the command line
         self.checker_class = kwargs.pop('checker_class', Checker)
         parse_argv = kwargs.pop('parse_argv', False)
@@ -2119,7 +2125,7 @@ class StyleGuide(object):
             options.reporter = BaseReport if options.quiet else StandardReport
 
         options.select = tuple(options.select or ())
-        debug("StyleGuide: options.ignore 1: " +
+        loger(2, "StyleGuide: options.ignore 1: " +
               str(options.ignore))
         if not (options.select or options.ignore or
                 options.testsuite or options.doctest) and DEFAULT_IGNORE:
@@ -2128,7 +2134,7 @@ class StyleGuide(object):
         else:
             # Ignore all checks which are not explicitly selected
             options.ignore = ('',) if options.select else tuple(options.ignore)
-        debug("StyleGuide: options.ignore 2: " +
+        loger(1, "StyleGuide: options.ignore 2: " +
               str(options.ignore))
         # raise Exception()
         options.benchmark_keys = BENCHMARK_KEYS[:]
@@ -2429,9 +2435,9 @@ def _parse_list_multi_options(options):
     options.select = _parse_multi_options(options.select)
     options.ignore = _parse_multi_options(options.ignore)
 
-    debug("StyleGuide: process_options, select: " +
+    loger(4, "StyleGuide: process_options, select: " +
           str(options.select))
-    debug("StyleGuide: process_options, ignore: " +
+    loger(4, "StyleGuide: process_options, ignore: " +
           str(options.ignore))
 
 
@@ -2455,7 +2461,7 @@ def _parse_multi_options(option, split_token=','):
 
 def _ensure_valid_arguments(options):
     _parse_list_multi_options(options)
-    debug("_ensure_valid_arguments, options: " + str(options))
+    loger(2, "_ensure_valid_arguments, options: " + str(options))
 
     options_dict = options.__dict__
     default_types = (("verbose", int),
@@ -2518,12 +2524,6 @@ def _main():
         if options.count:
             sys.stderr.write(str(report.total_errors) + '\n')
         sys.exit(1)
-
-
-def debug(text):
-    sys.stderr.write(text + "\n")
-    # print(text)
-    pass
 
 
 if __name__ == '__main__':
