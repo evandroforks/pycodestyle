@@ -2118,26 +2118,6 @@ class StyleGuide(object):
 
         _parse_list_multi_options(options)
         loger(2, "_ensure_valid_arguments, options: " + str(options))
-        assert isinstance(options.verbose, int)
-        assert isinstance(options.quiet, int)
-        assert isinstance(options.repeat, bool)
-        assert isinstance(options.exclude, (list, tuple))
-        assert isinstance(options.filename, (list, tuple))
-        assert isinstance(options.select, (list, tuple))
-        assert isinstance(options.ignore, (list, tuple))
-        assert isinstance(options.max_line_length, int)
-        assert isinstance(options.format, str)
-        assert isinstance(options.testsuite, str)
-        assert isinstance(options.doctest, bool)
-        assert isinstance(options.reporter, object)
-        assert isinstance(options.config, bool)
-        assert isinstance(options.show_source, bool)
-        assert isinstance(options.show_pep8, bool)
-        assert isinstance(options.statistics, bool)
-        assert isinstance(options.count, bool)
-        assert isinstance(options.hang_closing, bool)
-        assert isinstance(options.diff, bool)
-        assert isinstance(options.benchmark, bool)
 
         self.runner = self.input_file
         self.options = options
