@@ -47,7 +47,7 @@ W warnings
 900 syntax error
 """
 from __future__ import with_statement
-from python_debug_tools import getLogger
+from debug_tools import getLogger
 
 import inspect
 import keyword
