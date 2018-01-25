@@ -80,8 +80,8 @@ except ImportError:
 
 __version__ = '2.3.1'
 
-loger = getLogger(0)
-# loger.setup_logger("debug.txt", function=False, tick=False)
+loger = getLogger(0, "pycodestyle")
+# loger.setup_logger("F:/SublimeText/debug.txt", function=False, tick=False)
 
 
 DEFAULT_EXCLUDE = '.svn,CVS,.bzr,.hg,.git,__pycache__,.tox'
